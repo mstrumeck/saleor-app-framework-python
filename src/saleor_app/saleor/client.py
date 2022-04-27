@@ -9,7 +9,7 @@ logger = logging.getLogger("saleor.client")
 
 
 class SaleorClient:
-    def __init__(self, saleor_url, user_agent, auth_token=None, timeout=15):
+    def __init__(self, saleor_url, user_agent, auth_token=None, timeout=35):
         headers = {"User-Agent": user_agent}
         if auth_token:
             headers["Authorization"] = f"Bearer {auth_token}"
@@ -37,12 +37,15 @@ class SaleorClient:
         async with self.session.post(
             url="/graphql/", json={"query": query, "variables": variables}
         ) as resp:
-            response_data = await resp.json()
-            if errors := response_data.get("errors"):
-                exc = GraphQLError(
-                    errors=errors, response_data=response_data.get("data")
-                )
-                logger.error("Error when executing a GraphQL call to Saleor")
-                logger.debug(str(exc))
-                raise exc
+            try:
+                response_data = await resp.json()
+                if errors := response_data.get("errors"):
+                    exc = GraphQLError(
+                        errors=errors, response_data=response_data.get("data")
+                    )
+                    logger.error("Error when executing a GraphQL call to Saleor")
+                    logger.debug(str(exc))
+                    raise exc
+            except:
+                logger.info(resp.content)
             return response_data["data"]
